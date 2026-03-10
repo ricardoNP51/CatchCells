@@ -7,6 +7,11 @@ public class CellSpawner : MonoBehaviour
     public Transform cellsParent;
     public BoxCollider2D spawnArea;
     public ScoreManager scoreManager;
+<<<<<<< Updated upstream
+=======
+    public RoundManager roundManager;
+    public Transform mouseTarget;
+>>>>>>> Stashed changes
 
     [Header("Spawn Settings")]
     public int cellsPerRound = 12;
@@ -24,10 +29,20 @@ public class CellSpawner : MonoBehaviour
             Vector2 pos = GetRandomPointInBounds(spawnArea.bounds);
             GameObject cell = Instantiate(cellPrefab, pos, Quaternion.identity, cellsParent);
 
+<<<<<<< Updated upstream
             // Inicializar para que al morir sume score
             var behaviour = cell.GetComponent<CellBehaviour>();
             if (behaviour != null && scoreManager != null)
                 behaviour.Init(scoreManager);
+=======
+            var behaviour = cell.GetComponent<CellBehaviour>();
+            if (behaviour != null && scoreManager != null)
+                behaviour.Init(scoreManager);
+
+            var agent = cell.GetComponent<CellAgent>();
+            if (agent != null)
+                agent.SetEnvironmentReferences(mouseTarget, roundManager);
+>>>>>>> Stashed changes
         }
     }
 

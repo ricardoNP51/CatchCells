@@ -1,0 +1,47 @@
+{
+    "CellAgent": {
+        "checkpoints": [
+            {
+                "steps": 499998,
+                "file_path": "results\\catchcells_run_04\\CellAgent\\CellAgent-499998.onnx",
+                "reward": 1.4673333503305912,
+                "creation_time": 1773117445.506687,
+                "auxillary_file_paths": [
+                    "results\\catchcells_run_04\\CellAgent\\CellAgent-499998.pt"
+                ]
+            },
+            {
+                "steps": 999976,
+                "file_path": "results\\catchcells_run_04\\CellAgent\\CellAgent-999976.onnx",
+                "reward": null,
+                "creation_time": 1773117747.5325644,
+                "auxillary_file_paths": [
+                    "results\\catchcells_run_04\\CellAgent\\CellAgent-999976.pt"
+                ]
+            },
+            {
+                "steps": 1000104,
+                "file_path": "results\\catchcells_run_04\\CellAgent\\CellAgent-1000104.onnx",
+                "reward": null,
+                "creation_time": 1773117747.59913,
+                "auxillary_file_paths": [
+                    "results\\catchcells_run_04\\CellAgent\\CellAgent-1000104.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1000104,
+            "file_path": "results\\catchcells_run_04\\CellAgent.onnx",
+            "reward": null,
+            "creation_time": 1773117747.59913,
+            "auxillary_file_paths": [
+                "results\\catchcells_run_04\\CellAgent\\CellAgent-1000104.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.28.0",
+        "torch_version": "1.13.1+cpu"
+    }
+}

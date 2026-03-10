@@ -1,0 +1,29 @@
+{
+    "CellAgent": {
+        "checkpoints": [
+            {
+                "steps": 50496,
+                "file_path": "results\\catchcells_run_02\\CellAgent\\CellAgent-50496.onnx",
+                "reward": 1.4615000166813843,
+                "creation_time": 1773114656.8437252,
+                "auxillary_file_paths": [
+                    "results\\catchcells_run_02\\CellAgent\\CellAgent-50496.pt"
+                ]
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 50496,
+            "file_path": "results\\catchcells_run_02\\CellAgent.onnx",
+            "reward": 1.4615000166813843,
+            "creation_time": 1773114656.8437252,
+            "auxillary_file_paths": [
+                "results\\catchcells_run_02\\CellAgent\\CellAgent-50496.pt"
+            ]
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.3.0",
+        "mlagents_version": "0.28.0",
+        "torch_version": "1.13.1+cpu"
+    }
+}
