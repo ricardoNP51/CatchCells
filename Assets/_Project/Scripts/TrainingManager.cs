@@ -9,19 +9,44 @@ public class TrainingManager : MonoBehaviour
 
     [Header("Training Settings")]
     public bool autoMoveMouse = true;
-    public float mouseMoveRadiusX = 7f;
-    public float mouseMoveRadiusY = 4f;
-    public float mouseMoveSpeed = 1.5f;
+    public float moveInterval = 0.12f;
+    public float minX = -7f;
+    public float maxX = 7f;
+    public float minY = -4f;
+    public float maxY = 4f;
+    public float moveSpeed = 20f;
 
-    private Vector2 centerPoint = Vector2.zero;
+    private Vector2 targetPosition;
+    private float nextMoveTime;
+
+    private void Start()
+    {
+        PickNewTarget();
+    }
 
     private void Update()
     {
         if (!autoMoveMouse || mouseTarget == null) return;
 
-        float x = Mathf.Sin(Time.time * mouseMoveSpeed) * mouseMoveRadiusX;
-        float y = Mathf.Cos(Time.time * mouseMoveSpeed * 0.8f) * mouseMoveRadiusY;
+        if (Time.time >= nextMoveTime)
+        {
+            PickNewTarget();
+        }
 
-        mouseTarget.position = centerPoint + new Vector2(x, y);
+        mouseTarget.position = Vector2.MoveTowards(
+            mouseTarget.position,
+            targetPosition,
+            moveSpeed * Time.deltaTime
+        );
+    }
+
+    private void PickNewTarget()
+    {
+        targetPosition = new Vector2(
+            Random.Range(minX, maxX),
+            Random.Range(minY, maxY)
+        );
+
+        nextMoveTime = Time.time + moveInterval;
     }
 }

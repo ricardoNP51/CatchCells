@@ -54,6 +54,9 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
+  mouseDangerRadius: 0.8
+  mouseKillPenalty: -1.5
+  backgroundManager: {fileID: 0}
   spriteRenderer: {fileID: 5243998755415286281}
   rb: {fileID: 3496596437802514968}
   mouseTarget: {fileID: 0}
@@ -63,11 +66,11 @@ MonoBehaviour:
   aliveRewardPerStep: 0.001
   surviveRoundReward: 1
   deathPenalty: -1
-  closeToMousePenalty: -0.002
-  closeMouseDistance: 1.5
   outOfBoundsPenalty: -0.5
-  moveAwayReward: 0.002
-  moveTowardPenalty: -0.002
+  closeMouseDistance: 1.4
+  closeToMousePenalty: -0.02
+  moveAwayReward: 0.015
+  moveTowardPenalty: -0.015
   minX: -8
   maxX: 8
   minY: -4.5
@@ -86,6 +89,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CellBehaviour
   pulseSpeed: 5
   pulseIntensity: 0.1
+  escapeRadius: 1.8
+  escapeSpeed: 2
 --- !u!212 &5243998755415286281
 SpriteRenderer:
   serializedVersion: 2
@@ -221,16 +226,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Policies.BehaviorParameters
   m_BrainParameters:
-    VectorObservationSize: 9
+    VectorObservationSize: 7
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 0
-      BranchSizes: 03000000030000000c00000006000000
-    VectorActionSize: 03000000030000000c00000006000000
+      BranchSizes: 0c00000006000000
+    VectorActionSize: 0c00000006000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 0
     hasUpgradedBrainParametersWithActionSpec: 1
-  m_Model: {fileID: 5022602860645237092, guid: 1a35acab8a2b01144a1cb1b9f2e95774, type: 3}
+  m_Model: {fileID: 5022602860645237092, guid: 421b73398a3caed46b2a52f0cb09b1f3, type: 3}
   m_InferenceDevice: 0
   m_BehaviorType: 2
   m_BehaviorName: CellAgent
