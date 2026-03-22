@@ -7,6 +7,11 @@ public class ClickKiller : MonoBehaviour
     [Header("Target Layer")]
     public LayerMask cellLayerMask; // selecciona solo "Cell"
 
+
+    [Header("Visual Effects")]
+    public GameObject deathEffectPrefab; 
+    
+
     private void Awake()
     {
         mainCam = Camera.main;
@@ -26,6 +31,11 @@ public class ClickKiller : MonoBehaviour
         var cell = col.GetComponent<CellBehaviour>();
         if (cell != null)
         {
+           // Creamos la explosión en la misma posición de la célula antes de matarla
+            if (deathEffectPrefab != null)
+            {
+                Instantiate(deathEffectPrefab, col.transform.position, Quaternion.identity);
+            }
             cell.KillByPlayer();
         }
     }

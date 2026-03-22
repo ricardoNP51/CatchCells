@@ -7,7 +7,6 @@ public class RoundManager : MonoBehaviour
 
     [Header("References")]
     public CellSpawner spawner;
-    public Transform cellsParent;
 
     public int CurrentRound { get; private set; } = 1;
     public float TimeLeft { get; private set; }
@@ -47,18 +46,7 @@ public class RoundManager : MonoBehaviour
     private void EndRound()
     {
         roundRunning = false;
-
-        if (cellsParent != null)
-        {
-            for (int i = 0; i < cellsParent.childCount; i++)
-            {
-                CellAgent agent = cellsParent.GetChild(i).GetComponent<CellAgent>();
-                if (agent != null)
-                {
-                    agent.OnSurvivedRound();
-                }
-            }
-        }
+        // Aquí luego metemos evaluación ML (sobrevivió o murió)
     }
 
     private void StartNextRound()

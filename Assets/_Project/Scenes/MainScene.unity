@@ -119,6 +119,63 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &242458784
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 242458786}
+  - component: {fileID: 242458785}
+  m_Layer: 6
+  m_Name: LearningEngine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &242458785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 242458784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 948c7a620d8f656478110de8c30b7be2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LearningEngine
+  epsilon: 0.2
+  palette:
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 0, g: 0, b: 1, a: 1}
+  - {r: 0, g: 1, b: 0, a: 1}
+  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - {r: 0, g: 0, b: 0, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  sizes:
+  - 0.5
+  - 1
+  - 1.5
+  - 2
+--- !u!4 &242458786
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 242458784}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &467734617
 GameObject:
   m_ObjectHideFlags: 0
@@ -418,8 +475,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-<<<<<<< Updated upstream
-=======
 --- !u!1 &1122435776
 GameObject:
   m_ObjectHideFlags: 0
@@ -557,50 +612,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1122435776}
   m_CullTransparentMesh: 1
---- !u!1 &1245912194
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1245912196}
-  - component: {fileID: 1245912195}
-  m_Layer: 0
-  m_Name: MouseTarget
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1245912195
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1245912194}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d06d612c07fc6134392da99f6bb19a36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MouseTracker
---- !u!4 &1245912196
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1245912194}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.46675, y: -1.90451, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1467682996
 GameObject:
   m_ObjectHideFlags: 0
@@ -920,7 +931,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1714485852}
   m_CullTransparentMesh: 1
->>>>>>> Stashed changes
 --- !u!1 &1969392545
 GameObject:
   m_ObjectHideFlags: 0
@@ -930,6 +940,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1969392549}
+  - component: {fileID: 1969392551}
   - component: {fileID: 1969392548}
   - component: {fileID: 1969392547}
   - component: {fileID: 1969392546}
@@ -955,7 +966,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoundManager
   roundDuration: 10
   spawner: {fileID: 1969392547}
-  cellsParent: {fileID: 0}
 --- !u!114 &1969392547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -972,11 +982,7 @@ MonoBehaviour:
   cellsParent: {fileID: 2062377559}
   spawnArea: {fileID: 467734618}
   scoreManager: {fileID: 1969392548}
-<<<<<<< Updated upstream
-=======
-  roundManager: {fileID: 0}
-  mouseTarget: {fileID: 1245912196}
->>>>>>> Stashed changes
+  learningEngine: {fileID: 242458785}
   cellsPerRound: 12
 --- !u!114 &1969392548
 MonoBehaviour:
@@ -1020,6 +1026,23 @@ MonoBehaviour:
   cellLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  deathEffectPrefab: {fileID: 4722884726039370961, guid: 21865b396081aa5489b03a2a993972ed, type: 3}
+--- !u!114 &1969392551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1969392545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37d4975df9804b54183ea455b3343e65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  timerText: {fileID: 1714485854}
+  scoreText: {fileID: 1122435778}
+  roundManager: {fileID: 1969392546}
+  scoreManager: {fileID: 1969392548}
 --- !u!1 &2062377558
 GameObject:
   m_ObjectHideFlags: 0
@@ -1060,10 +1083,6 @@ SceneRoots:
   - {fileID: 1969392549}
   - {fileID: 2062377559}
   - {fileID: 467734619}
-<<<<<<< Updated upstream
-=======
   - {fileID: 242458786}
   - {fileID: 1467683000}
   - {fileID: 1644250442}
-  - {fileID: 1245912196}
->>>>>>> Stashed changes
