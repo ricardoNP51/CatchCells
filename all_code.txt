@@ -1,0 +1,584 @@
+
+
+--- FILE: _Project\Agents\CellAgent.cs ---
+using UnityEngine;
+using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
+using Unity.MLAgents.Actuators;
+
+public class CellAgent : Agent
+{
+    [Header("Mouse Danger")]
+    public float mouseDangerRadius = 0.8f;
+    public float mouseKillPenalty = -1.5f;
+
+
+
+
+    public BackgroundManager backgroundManager;
+    [Header("Cell Settings")]
+    public SpriteRenderer spriteRenderer;
+    public Rigidbody2D rb;
+
+    [Header("Environment References")]
+    public Transform mouseTarget;
+    public Camera mainCamera;
+    public RoundManager roundManager;
+
+    [Header("Movement")]
+    public float moveSpeed = 2f;
+
+    [Header("Rewards")]
+    public float aliveRewardPerStep = 0.001f;
+    public float surviveRoundReward = 1.0f;
+    public float deathPenalty = -1.0f;
+    public float outOfBoundsPenalty = -0.5f;
+
+    public float closeMouseDistance = 1.2f;
+    public float closeToMousePenalty = -0.03f;
+    public float moveAwayReward = 0.02f;
+    public float moveTowardPenalty = -0.02f;
+    [Header("Bounds")]
+    public float minX = -8f;
+    public float maxX = 8f;
+    public float minY = -4.5f;
+    public float maxY = 4.5f;
+
+    private Vector2 startPosition;
+    private bool isDead = false;
+    private float previousMouseDistance = 10f;
+
+    private readonly float[] sizeLevels = { 0.4f, 0.55f, 0.7f, 0.85f, 1.0f, 1.2f };
+
+    private readonly Color[] colorPalette =
+  {
+    new Color(0.2f, 0.4f, 0.8f),  // azul cuadrante
+    new Color(0.15f, 0.35f, 0.7f),// azul oscuro
+    new Color(0.3f, 0.5f, 0.9f),  // azul claro
+
+    new Color(0.2f, 0.7f, 0.3f),  // verde cuadrante
+    new Color(0.1f, 0.55f, 0.2f), // verde oscuro
+    new Color(0.35f, 0.8f, 0.4f), // verde claro
+
+    new Color(0.8f, 0.3f, 0.3f),  // rojo cuadrante
+    new Color(0.65f, 0.2f, 0.2f), // rojo oscuro
+    new Color(0.9f, 0.45f, 0.45f),// rojo claro
+
+    new Color(0.5f, 0.3f, 0.8f),  // morado cuadrante
+    new Color(0.4f, 0.2f, 0.65f), // morado oscuro
+    new Color(0.65f, 0.4f, 0.9f)  // morado claro
+};
+
+    public override void Initialize()
+    {
+        startPosition = transform.position;
+
+        if (rb == null)
+            rb = GetComponent<Rigidbody2D>();
+
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+    }
+
+    public void SetEnvironmentReferences(Transform mouse, RoundManager rm, BackgroundManager bg)
+    {
+        mouseTarget = mouse;
+        roundManager = rm;
+        backgroundManager = bg;
+    }
+
+    public override void OnEpisodeBegin()
+    {
+        isDead = false;
+        transform.position = startPosition;
+        rb.linearVelocity = Vector2.zero;
+        previousMouseDistance = 10f;
+    }
+
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        Color bgColor = Color.black;
+        if (backgroundManager != null)
+            bgColor = backgroundManager.GetBackgroundColorAtPosition(transform.position);
+
+        sensor.AddObservation(bgColor.r);
+        sensor.AddObservation(bgColor.g);
+        sensor.AddObservation(bgColor.b);
+
+        sensor.AddObservation(transform.position.x);
+        sensor.AddObservation(transform.position.y);
+
+        float mouseDistance = 10f;
+        if (mouseTarget != null)
+            mouseDistance = Vector2.Distance(transform.position, mouseTarget.position);
+
+        sensor.AddObservation(mouseDistance);
+
+        float normalizedTime = 0f;
+        if (roundManager != null && roundManager.roundDuration > 0f)
+            normalizedTime = roundManager.TimeLeft / roundManager.roundDuration;
+
+        sensor.AddObservation(normalizedTime);
+    }
+
+    public override void OnActionReceived(ActionBuffers actions)
+    {
+        if (isDead) return;
+
+        int colorAction = actions.DiscreteActions[0];
+        int sizeAction = actions.DiscreteActions[1];
+
+        // Aplicar color elegido
+        if (colorAction >= 0 && colorAction < colorPalette.Length)
+            spriteRenderer.color = colorPalette[colorAction];
+
+        // Aplicar tamaño elegido
+        if (sizeAction >= 0 && sizeAction < sizeLevels.Length)
+            transform.localScale = Vector3.one * sizeLevels[sizeAction];
+
+        // pequeña recompensa por seguir viva
+        AddReward(aliveRewardPerStep);
+
+        // Recompensa de camuflaje
+        if (backgroundManager != null)
+        {
+            Color bgColor = backgroundManager.GetBackgroundColorAtPosition(transform.position);
+            Color cellColor = spriteRenderer.color;
+
+            float contrast =
+                Mathf.Abs(cellColor.r - bgColor.r) +
+                Mathf.Abs(cellColor.g - bgColor.g) +
+                Mathf.Abs(cellColor.b - bgColor.b);
+
+            // menos contraste = mejor
+            AddReward(-contrast * 0.004f);
+        }
+
+        // premio por sobrevivir lejos del mouse
+        if (mouseTarget != null)
+        {
+            float distance = Vector2.Distance(transform.position, mouseTarget.position);
+
+            if (distance > 1.5f)
+                AddReward(0.002f);
+            else
+                AddReward(-0.002f);
+        }
+
+        // límites
+        if (transform.position.x < minX || transform.position.x > maxX ||
+            transform.position.y < minY || transform.position.y > maxY)
+        {
+            AddReward(outOfBoundsPenalty);
+            EndEpisode();
+        }
+    }
+
+    public void OnKilledByPlayer()
+    {
+        if (isDead) return;
+
+        isDead = true;
+        AddReward(deathPenalty);
+        EndEpisode();
+    }
+
+    public void OnSurvivedRound()
+    {
+        if (isDead) return;
+
+        AddReward(surviveRoundReward);
+        EndEpisode();
+    }
+
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
+        var discreteActions = actionsOut.DiscreteActions;
+        discreteActions[0] = 1; // quieto horizontal
+        discreteActions[1] = 1; // quieto vertical
+        discreteActions[2] = 0; // color por defecto
+        discreteActions[3] = 4; // tamaño medio
+    }
+}
+
+--- FILE: _Project\Scripts\BackgroundManager.cs ---
+using UnityEngine;
+
+public class BackgroundManager : MonoBehaviour
+{
+    public Color topLeftColor = new Color(0.2f, 0.4f, 0.8f);
+    public Color topRightColor = new Color(0.2f, 0.7f, 0.3f);
+    public Color bottomLeftColor = new Color(0.8f, 0.3f, 0.3f);
+    public Color bottomRightColor = new Color(0.5f, 0.3f, 0.8f);
+
+    public Color GetBackgroundColorAtPosition(Vector2 pos)
+    {
+        if (pos.x < 0 && pos.y >= 0) return topLeftColor;
+        if (pos.x >= 0 && pos.y >= 0) return topRightColor;
+        if (pos.x < 0 && pos.y < 0) return bottomLeftColor;
+        return bottomRightColor;
+    }
+}
+
+--- FILE: _Project\Scripts\CellBehaviour.cs ---
+using UnityEngine;
+
+public class CellBehaviour : MonoBehaviour
+{
+    private bool isDead = false;
+    private ScoreManager scoreManager;
+    private CellAgent cellAgent;
+    private Transform mouseTarget;
+    private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
+
+    [Header("Visual Difficulty Settings")]
+    public float pulseSpeed = 5f;
+    public float pulseIntensity = 0.1f;
+    private Vector3 baseScale;
+
+    private void Start()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // --- MEJORA DE DIFICULTAD VISUAL (ALISON) ---
+
+        // 1. Color y Transparencia aleatoria (Camuflaje)
+        // El cuarto número (Random.Range(0.3f, 0.8f)) las hace semi-transparentes
+        spriteRenderer.color = new Color(Random.value, Random.value, Random.value, Random.Range(0.4f, 0.8f));
+
+        // 2. Tamaño aleatorio (Unas mini y otras grandes)
+        float randomSize = Random.Range(0.5f, 1.5f);
+        transform.localScale = new Vector3(randomSize, randomSize, 1f);
+        baseScale = transform.localScale;
+
+        cellAgent = GetComponent<CellAgent>();
+        rb = GetComponent<Rigidbody2D>();
+
+        GameObject mouseObj = GameObject.Find("MouseTarget");
+        if (mouseObj != null) mouseTarget = mouseObj.transform;
+    }
+
+    private void Update()
+    {
+        // Animación de pulso
+        float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseIntensity;
+        transform.localScale = baseScale * pulse;
+
+        // 3. EFECTO EXTRA: Parpadeo suave (Dificulta el enfoque)
+        float alpha = 0.5f + Mathf.PingPong(Time.time, 0.5f);
+        Color c = spriteRenderer.color;
+        spriteRenderer.color = new Color(c.r, c.g, c.b, alpha);
+
+        EscapeFromMouse();
+    }
+
+    private void EscapeFromMouse()
+    {
+        if (mouseTarget == null || rb == null) return;
+        float distance = Vector2.Distance(transform.position, mouseTarget.position);
+        if (distance < 1.8f)
+        {
+            Vector2 dir = ((Vector2)transform.position - (Vector2)mouseTarget.position).normalized;
+            rb.linearVelocity = dir * 4.5f;
+        }
+        else rb.linearVelocity = Vector2.zero;
+    }
+
+    public void Init(ScoreManager scoreMgr) { scoreManager = scoreMgr; }
+
+    public void KillByPlayer()
+    {
+        if (isDead) return;
+        isDead = true;
+        if (scoreManager != null) scoreManager.AddPoint(1);
+        if (cellAgent != null) cellAgent.OnKilledByPlayer();
+        Destroy(gameObject);
+    }
+}
+
+--- FILE: _Project\Scripts\CellSpawner.cs ---
+using UnityEngine;
+
+public class CellSpawner : MonoBehaviour
+{
+    [Header("References")]
+    public GameObject cellPrefab;
+    public Transform cellsParent;
+    public BoxCollider2D spawnArea;
+    public ScoreManager scoreManager;
+    public BackgroundManager backgroundManager;
+    public RoundManager roundManager;
+    public Transform mouseTarget;
+
+    [Header("Spawn Settings")]
+    public int cellsPerRound = 12;
+
+    public void SpawnCellsForRound()
+    {
+        if (cellPrefab == null || cellsParent == null || spawnArea == null)
+        {
+            Debug.LogError("CellSpawner: Faltan referencias (prefab/parent/spawnArea).");
+            return;
+        }
+
+        for (int i = 0; i < cellsPerRound; i++)
+        {
+            Vector2 pos = GetRandomPointInBounds(spawnArea.bounds);
+            GameObject cell = Instantiate(cellPrefab, pos, Quaternion.identity, cellsParent);
+
+            // Inicializar para que al morir sume score
+            var behaviour = cell.GetComponent<CellBehaviour>();
+            if (behaviour != null && scoreManager != null)
+                behaviour.Init(scoreManager);
+
+   
+
+            var agent = cell.GetComponent<CellAgent>();
+            if (agent != null)
+                agent.SetEnvironmentReferences(mouseTarget, roundManager, backgroundManager);
+        }
+    }
+
+    public void ClearCells()
+    {
+        if (cellsParent == null) return;
+
+        for (int i = cellsParent.childCount - 1; i >= 0; i--)
+        {
+            Destroy(cellsParent.GetChild(i).gameObject);
+        }
+    }
+
+    private Vector2 GetRandomPointInBounds(Bounds b)
+    {
+        float x = Random.Range(b.min.x, b.max.x);
+        float y = Random.Range(b.min.y, b.max.y);
+        return new Vector2(x, y);
+    }
+}
+
+--- FILE: _Project\Scripts\ClickKiller.cs ---
+using UnityEngine;
+
+public class ClickKiller : MonoBehaviour
+{
+    private Camera mainCam;
+
+    [Header("Target Layer")]
+    public LayerMask cellLayerMask; // selecciona solo "Cell"
+
+    private void Awake()
+    {
+        mainCam = Camera.main;
+    }
+
+    private void Update()
+    {
+        if (!Input.GetMouseButtonDown(0)) return;
+
+        Vector2 worldPos = mainCam.ScreenToWorldPoint(Input.mousePosition);
+
+        // SOLO mata si el click cae dentro de un collider de la layer Cell
+        Collider2D col = Physics2D.OverlapPoint(worldPos, cellLayerMask);
+
+        if (col == null) return;
+
+        var cell = col.GetComponent<CellBehaviour>();
+        if (cell != null)
+        {
+            cell.KillByPlayer();
+        }
+    }
+}
+
+--- FILE: _Project\Scripts\MouseTracker.cs ---
+using UnityEngine;
+
+public class MouseTracker : MonoBehaviour
+{
+    private Camera mainCam;
+    public TrainingManager trainingManager; // Arrastra el objeto con el TrainingManager aquí
+
+    private void Start()
+    {
+        mainCam = Camera.main;
+    }
+
+    private void Update()
+    {
+        // Si el modo automático está encendido, el script manual se detiene
+        if (trainingManager != null && trainingManager.autoMoveMouse) return;
+
+        Vector3 mouseScreen = Input.mousePosition;
+        Vector3 mouseWorld = mainCam.ScreenToWorldPoint(mouseScreen);
+        mouseWorld.z = 0f;
+        transform.position = mouseWorld;
+    }
+}
+
+--- FILE: _Project\Scripts\RoundManager.cs ---
+using UnityEngine;
+
+public class RoundManager : MonoBehaviour
+{
+    [Header("Round Settings")]
+    public float roundDuration = 10f;
+
+    [Header("References")]
+    public CellSpawner spawner;
+    public Transform cellsParent;
+
+    public int CurrentRound { get; private set; } = 1;
+    public float TimeLeft { get; private set; }
+
+    private bool roundRunning = false;
+
+    private void Start()
+    {
+        StartRound();
+    }
+
+    private void Update()
+    {
+        if (!roundRunning) return;
+
+        TimeLeft -= Time.deltaTime;
+
+        if (TimeLeft <= 0f)
+        {
+            EndRound();
+            StartNextRound();
+        }
+    }
+
+    private void StartRound()
+    {
+        roundRunning = true;
+        TimeLeft = roundDuration;
+
+        if (spawner != null)
+        {
+            spawner.ClearCells();
+            spawner.SpawnCellsForRound();
+        }
+    }
+
+    private void EndRound()
+    {
+        roundRunning = false;
+
+        if (cellsParent != null)
+        {
+            for (int i = 0; i < cellsParent.childCount; i++)
+            {
+                CellAgent agent = cellsParent.GetChild(i).GetComponent<CellAgent>();
+                if (agent != null)
+                {
+                    agent.OnSurvivedRound();
+                }
+            }
+        }
+    }
+
+    private void StartNextRound()
+    {
+        CurrentRound++;
+        StartRound();
+    }
+}
+
+--- FILE: _Project\Scripts\ScoreManager.cs ---
+using UnityEngine;
+
+public class ScoreManager : MonoBehaviour
+{
+    public int Score { get; private set; } = 0;
+
+    public void ResetScore()
+    {
+        Score = 0;
+    }
+
+    public void AddPoint(int amount = 1)
+    {
+        Score += amount;
+    }
+}
+
+--- FILE: _Project\Scripts\TrainingManager.cs ---
+using UnityEngine;
+using TMPro; // Necesario para cambiar el texto del botón
+
+public class TrainingManager : MonoBehaviour
+{
+    [Header("References")]
+    public RoundManager roundManager;
+    public CellSpawner cellSpawner;
+    public Transform mouseTarget;
+    public TextMeshProUGUI buttonText; // Arrastra el texto de tu botón aquí
+
+    [Header("Training Settings")]
+    public bool autoMoveMouse = false;
+    public float moveInterval = 0.12f;
+    public float minX = -7f;
+    public float maxX = 7f;
+    public float minY = -4f;
+    public float maxY = 4f;
+    public float moveSpeed = 20f;
+
+    private Vector2 targetPosition;
+    private float nextMoveTime;
+
+    // ESTA FUNCIÓN VA EN EL ON CLICK DEL BOTÓN
+    public void ToggleTrainingMode()
+    {
+        autoMoveMouse = !autoMoveMouse;
+
+        // --- TAREA: DIFICULTAD VISUAL (INDICADOR) ---
+        GameObject bg = GameObject.Find("Background");
+        if (bg != null)
+        {
+            // Se oscurece en modo entrenamiento para diferenciarlo
+            bg.GetComponent<SpriteRenderer>().color = autoMoveMouse ? new Color(0.2f, 0.2f, 0.2f) : Color.white;
+        }
+
+        // --- TAREA: BOTÓN TRAINING/PLAY ---
+        if (buttonText != null)
+        {
+            buttonText.text = autoMoveMouse ? "MODE: TRAINING" : "MODE: PLAY";
+        }
+
+        Debug.Log("Alison - Cambio de modo: " + (autoMoveMouse ? "Entrenamiento" : "Juego"));
+    }
+
+    private void Start()
+    {
+        PickNewTarget();
+    }
+
+    private void Update()
+    {
+        if (!autoMoveMouse || mouseTarget == null) return;
+
+        if (Time.time >= nextMoveTime)
+        {
+            PickNewTarget();
+        }
+
+        mouseTarget.position = Vector2.MoveTowards(
+            mouseTarget.position,
+            targetPosition,
+            moveSpeed * Time.deltaTime
+        );
+    }
+
+    private void PickNewTarget()
+    {
+        targetPosition = new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
+        nextMoveTime = Time.time + moveInterval;
+    }
+}

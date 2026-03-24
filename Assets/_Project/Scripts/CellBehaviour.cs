@@ -4,50 +4,90 @@ public class CellBehaviour : MonoBehaviour
 {
     private bool isDead = false;
     private ScoreManager scoreManager;
-    
-    public string configKey;
-    private LearningEngine learningEngine;
+    private CellAgent cellAgent;
+    private Transform mouseTarget;
+    private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
 
-    // Variables para la animaciÛn de pulso ---
-    [Header("Pulse Animation Settings")]
-    public float pulseSpeed = 5f;       // Velocidad del latido
-    public float pulseIntensity = 0.1f;  // QuÈ tanto se agranda
-    private Vector3 originalScale;       // Guarda el tamaÒo inicial
-    private float pulseTimer;            // Contador interno para el movimiento
-    
+    [Header("Visual Difficulty Settings")]
+    public float pulseSpeed = 5f;
+    public float pulseIntensity = 0.1f;
+    public bool showOutline = true; // Opcion visible en Inspector
+    public float outlineThickness = 1.15f; // Grosor del contorno negro
+    private Vector3 baseScale;
 
-    public void Init(ScoreManager scoreMgr, string key, LearningEngine engine)
+    private void Start()
     {
-        scoreManager = scoreMgr;
-        configKey = key;
-        learningEngine = engine;
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer.sortingOrder = 10; // Asegurarse de que se rendericen por delante del fondo
 
-        originalScale = transform.localScale;
-        pulseTimer = Random.Range(0f, 5f); // Para que no todas pulsen al mismo tiempo
-        
+        // --- MEJORA DE DIFICULTAD VISUAL (ALISON) ---
+
+        // 1. Color y Transparencia aleatoria (Camuflaje)
+        // El cuarto n√∫mero (Random.Range(0.3f, 0.8f)) las hace semi-transparentes
+        spriteRenderer.color = new Color(Random.value, Random.value, Random.value, Random.Range(0.4f, 0.8f));
+
+        // 2. Tama√±o aleatorio (Unas mini y otras grandes)
+        float randomSize = Random.Range(0.5f, 1.5f);
+        transform.localScale = new Vector3(randomSize, randomSize, 1f);
+        baseScale = transform.localScale;
+
+        // --- SOLUCION AL CAMUFLAJE PERFECTO ---
+        if (showOutline)
+        {
+            GameObject outlineObj = new GameObject("Outline");
+            outlineObj.transform.SetParent(transform);
+            outlineObj.transform.localPosition = Vector3.zero;
+            outlineObj.transform.localScale = Vector3.one * outlineThickness;
+            
+            SpriteRenderer outlineSR = outlineObj.AddComponent<SpriteRenderer>();
+            outlineSR.sprite = spriteRenderer.sprite;
+            outlineSR.color = new Color(0f, 0f, 0f, 0.45f); // Contorno negro semi-transparente
+            outlineSR.sortingOrder = 9; // Se dibuja detr√°s de la c√©lula (10), pero delante del fondo (0)
+        }
+
+        cellAgent = GetComponent<CellAgent>();
+        rb = GetComponent<Rigidbody2D>();
     }
+
     private void Update()
     {
-        if (isDead) return;
+        // Animaci√≥n de pulso
+        float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseIntensity;
+        transform.localScale = baseScale * pulse;
 
-        // LÛgica de la tarea "Cell Pulse Animation"
-        pulseTimer += Time.deltaTime * pulseSpeed;
-        float scaleOffset = Mathf.Sin(pulseTimer) * pulseIntensity;
-        transform.localScale = originalScale + new Vector3(scaleOffset, scaleOffset, 0);
+        // 3. EFECTO EXTRA: Parpadeo suave (Dificulta el enfoque)
+        float alpha = 0.5f + Mathf.PingPong(Time.time, 0.5f);
+        Color c = spriteRenderer.color;
+        spriteRenderer.color = new Color(c.r, c.g, c.b, alpha);
+
+        EscapeFromMouse();
+    }
+
+    private void EscapeFromMouse()
+    {
+        if (mouseTarget == null || rb == null) return;
+        float sqrDistance = ((Vector2)transform.position - (Vector2)mouseTarget.position).sqrMagnitude;
+        if (sqrDistance < 3.24f)
+        {
+            Vector2 dir = ((Vector2)transform.position - (Vector2)mouseTarget.position).normalized;
+            rb.linearVelocity = dir * 4.5f;
+        }
+        else rb.linearVelocity = Vector2.zero;
+    }
+
+    public void Init(ScoreManager scoreMgr, Transform mouse) 
+    { 
+        scoreManager = scoreMgr; 
+        mouseTarget = mouse;
     }
 
     public void KillByPlayer()
     {
         if (isDead) return;
         isDead = true;
-
-         if (learningEngine != null) learningEngine.UpdateMemory(configKey, false);    // avisamos que esta config NO sobreviviÛ
-
-
-        if (scoreManager != null)
-            scoreManager.AddPoint(1);
-
+        if (scoreManager != null) scoreManager.AddPoint(1);
+        if (cellAgent != null) cellAgent.OnKilledByPlayer();
         Destroy(gameObject);
     }
-
 }

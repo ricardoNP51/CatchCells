@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro; // Necesario para cambiar el texto del botón
 
 public class TrainingManager : MonoBehaviour
 {
@@ -6,22 +7,66 @@ public class TrainingManager : MonoBehaviour
     public RoundManager roundManager;
     public CellSpawner cellSpawner;
     public Transform mouseTarget;
+    public TextMeshProUGUI buttonText; // Arrastra el texto de tu botón aquí
 
     [Header("Training Settings")]
-    public bool autoMoveMouse = true;
-    public float mouseMoveRadiusX = 7f;
-    public float mouseMoveRadiusY = 4f;
-    public float mouseMoveSpeed = 1.5f;
+    public bool autoMoveMouse = false;
+    public float moveInterval = 0.12f;
+    public float minX = -7f;
+    public float maxX = 7f;
+    public float minY = -4f;
+    public float maxY = 4f;
+    public float moveSpeed = 20f;
 
-    private Vector2 centerPoint = Vector2.zero;
+    private Vector2 targetPosition;
+    private float nextMoveTime;
+
+    // ESTA FUNCIÓN VA EN EL ON CLICK DEL BOTÓN
+    public void ToggleTrainingMode()
+    {
+        autoMoveMouse = !autoMoveMouse;
+
+        // --- TAREA: DIFICULTAD VISUAL (INDICADOR) ---
+        GameObject bg = GameObject.Find("Background");
+        if (bg != null)
+        {
+            // Se oscurece en modo entrenamiento para diferenciarlo
+            bg.GetComponent<SpriteRenderer>().color = autoMoveMouse ? new Color(0.2f, 0.2f, 0.2f) : Color.white;
+        }
+
+        // --- TAREA: BOTÓN TRAINING/PLAY ---
+        if (buttonText != null)
+        {
+            buttonText.text = autoMoveMouse ? "MODE: TRAINING" : "MODE: PLAY";
+        }
+
+        Debug.Log("Alison - Cambio de modo: " + (autoMoveMouse ? "Entrenamiento" : "Juego"));
+    }
+
+    private void Start()
+    {
+        PickNewTarget();
+    }
 
     private void Update()
     {
         if (!autoMoveMouse || mouseTarget == null) return;
 
-        float x = Mathf.Sin(Time.time * mouseMoveSpeed) * mouseMoveRadiusX;
-        float y = Mathf.Cos(Time.time * mouseMoveSpeed * 0.8f) * mouseMoveRadiusY;
+        if (Time.time >= nextMoveTime)
+        {
+            PickNewTarget();
+        }
 
-        mouseTarget.position = centerPoint + new Vector2(x, y);
+        mouseTarget.position = Vector2.MoveTowards(
+            mouseTarget.position,
+            targetPosition,
+            moveSpeed * Time.deltaTime
+        );
+    }
+
+    private void PickNewTarget()
+    {
+        targetPosition = new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
+        nextMoveTime = Time.time + moveInterval;
     }
 }

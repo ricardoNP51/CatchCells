@@ -5,6 +5,11 @@ using Unity.MLAgents.Actuators;
 
 public class CellAgent : Agent
 {
+    [Header("Mouse Danger")]
+    public float mouseDangerRadius = 0.8f;
+    public float mouseKillPenalty = -1.5f;
+
+    public BackgroundManager backgroundManager;
     [Header("Cell Settings")]
     public SpriteRenderer spriteRenderer;
     public Rigidbody2D rb;
@@ -21,12 +26,12 @@ public class CellAgent : Agent
     public float aliveRewardPerStep = 0.001f;
     public float surviveRoundReward = 1.0f;
     public float deathPenalty = -1.0f;
-    public float closeToMousePenalty = -0.002f;
-    public float closeMouseDistance = 1.5f;
     public float outOfBoundsPenalty = -0.5f;
-    public float moveAwayReward = 0.002f;
-    public float moveTowardPenalty = -0.002f;
 
+    public float closeMouseDistance = 1.2f;
+    public float closeToMousePenalty = -0.03f;
+    public float moveAwayReward = 0.02f;
+    public float moveTowardPenalty = -0.02f;
     [Header("Bounds")]
     public float minX = -8f;
     public float maxX = 8f;
@@ -40,20 +45,23 @@ public class CellAgent : Agent
     private readonly float[] sizeLevels = { 0.4f, 0.55f, 0.7f, 0.85f, 1.0f, 1.2f };
 
     private readonly Color[] colorPalette =
-    {
-        Color.red,
-        Color.green,
-        Color.blue,
-        Color.yellow,
-        Color.cyan,
-        Color.magenta,
-        new Color(1f, 0.5f, 0f),   // naranja
-        new Color(0.5f, 0f, 1f),   // morado
-        new Color(1f, 0.4f, 0.7f), // rosa
-        new Color(0f, 0.4f, 0f),   // verde oscuro
-        new Color(0f, 0f, 0.4f),   // azul oscuro
-        Color.gray
-    };
+  {
+    new Color(0.2f, 0.4f, 0.8f),
+    new Color(0.15f, 0.35f, 0.7f),
+    new Color(0.3f, 0.5f, 0.9f),
+
+    new Color(0.2f, 0.7f, 0.3f),
+    new Color(0.1f, 0.55f, 0.2f),
+    new Color(0.35f, 0.8f, 0.4f),
+
+    new Color(0.8f, 0.3f, 0.3f),
+    new Color(0.65f, 0.2f, 0.2f),
+    new Color(0.9f, 0.45f, 0.45f),
+
+    new Color(0.5f, 0.3f, 0.8f),
+    new Color(0.4f, 0.2f, 0.65f),
+    new Color(0.65f, 0.4f, 0.9f)
+};
 
     public override void Initialize()
     {
@@ -69,10 +77,11 @@ public class CellAgent : Agent
             mainCamera = Camera.main;
     }
 
-    public void SetEnvironmentReferences(Transform mouse, RoundManager rm)
+    public void SetEnvironmentReferences(Transform mouse, RoundManager rm, BackgroundManager bg)
     {
         mouseTarget = mouse;
         roundManager = rm;
+        backgroundManager = bg;
     }
 
     public override void OnEpisodeBegin()
@@ -85,32 +94,23 @@ public class CellAgent : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // 1-2: posición
+        Color bgColor = Color.black;
+        if (backgroundManager != null)
+            bgColor = backgroundManager.GetBackgroundColorAtPosition(transform.position);
+
+        sensor.AddObservation(bgColor.r);
+        sensor.AddObservation(bgColor.g);
+        sensor.AddObservation(bgColor.b);
+
         sensor.AddObservation(transform.position.x);
         sensor.AddObservation(transform.position.y);
 
-        // 3-4: velocidad
-        sensor.AddObservation(rb.linearVelocity.x);
-        sensor.AddObservation(rb.linearVelocity.y);
-
-        // 5: tamaño actual
-        sensor.AddObservation(transform.localScale.x);
-
-        // 6-7-8: mouse relativo
-        Vector2 mouseDelta = Vector2.zero;
-        float mouseDistance = 10f; // lejos por defecto
-
+        float mouseDistance = 10f;
         if (mouseTarget != null)
-        {
-            mouseDelta = (Vector2)(mouseTarget.position - transform.position);
-            mouseDistance = mouseDelta.magnitude;
-        }
+            mouseDistance = Vector2.Distance(transform.position, mouseTarget.position);
 
-        sensor.AddObservation(mouseDelta.x);
-        sensor.AddObservation(mouseDelta.y);
         sensor.AddObservation(mouseDistance);
 
-        // 9: tiempo restante normalizado
         float normalizedTime = 0f;
         if (roundManager != null && roundManager.roundDuration > 0f)
             normalizedTime = roundManager.TimeLeft / roundManager.roundDuration;
@@ -122,30 +122,8 @@ public class CellAgent : Agent
     {
         if (isDead) return;
 
-        int moveXAction = actions.DiscreteActions[0];
-        int moveYAction = actions.DiscreteActions[1];
-        int colorAction = actions.DiscreteActions[2];
-        int sizeAction = actions.DiscreteActions[3];
-
-        float moveX = 0f;
-        float moveY = 0f;
-
-        switch (moveXAction)
-        {
-            case 0: moveX = -1f; break;
-            case 1: moveX = 0f; break;
-            case 2: moveX = 1f; break;
-        }
-
-        switch (moveYAction)
-        {
-            case 0: moveY = -1f; break;
-            case 1: moveY = 0f; break;
-            case 2: moveY = 1f; break;
-        }
-
-        Vector2 movement = new Vector2(moveX, moveY).normalized;
-        rb.linearVelocity = movement * moveSpeed;
+        int colorAction = actions.DiscreteActions[0];
+        int sizeAction = actions.DiscreteActions[1];
 
         if (colorAction >= 0 && colorAction < colorPalette.Length)
             spriteRenderer.color = colorPalette[colorAction];
@@ -155,19 +133,27 @@ public class CellAgent : Agent
 
         AddReward(aliveRewardPerStep);
 
+        if (backgroundManager != null)
+        {
+            Color bgColor = backgroundManager.GetBackgroundColorAtPosition(transform.position);
+            Color cellColor = spriteRenderer.color;
+
+            float contrast =
+                Mathf.Abs(cellColor.r - bgColor.r) +
+                Mathf.Abs(cellColor.g - bgColor.g) +
+                Mathf.Abs(cellColor.b - bgColor.b);
+
+            AddReward(-contrast * 0.004f);
+        }
+
         if (mouseTarget != null)
         {
-            float distance = Vector2.Distance(transform.position, mouseTarget.position);
+            float sqrDistance = ((Vector2)transform.position - (Vector2)mouseTarget.position).sqrMagnitude;
 
-            if (distance < closeMouseDistance)
-                AddReward(closeToMousePenalty);
-
-            if (distance > previousMouseDistance)
-                AddReward(moveAwayReward);
-            else if (distance < previousMouseDistance)
-                AddReward(moveTowardPenalty);
-
-            previousMouseDistance = distance;
+            if (sqrDistance > 2.25f)
+                AddReward(0.002f);
+            else
+                AddReward(-0.002f);
         }
 
         if (transform.position.x < minX || transform.position.x > maxX ||
@@ -198,9 +184,9 @@ public class CellAgent : Agent
     public override void Heuristic(in ActionBuffers actionsOut)
     {
         var discreteActions = actionsOut.DiscreteActions;
-        discreteActions[0] = 1; // quieto horizontal
-        discreteActions[1] = 1; // quieto vertical
-        discreteActions[2] = 0; // color por defecto
-        discreteActions[3] = 4; // tamaño medio
+        discreteActions[0] = 1;
+        discreteActions[1] = 1;
+        discreteActions[2] = 0;
+        discreteActions[3] = 4;
     }
 }
