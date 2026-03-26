@@ -89,7 +89,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CellBehaviour
   pulseSpeed: 5
   pulseIntensity: 0.1
-  showOutline: 0
+  showOutline: 1
   outlineThickness: 1.05
 --- !u!212 &5243998755415286281
 SpriteRenderer:
